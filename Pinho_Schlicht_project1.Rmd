@@ -73,22 +73,73 @@ source('./mykNN.R')
 ```
 
 # Problem 1
-### Part 1
-```{r, include=FALSE}
+## Part 1
+```{r}
 # load data
 load('data/ozone.RData')
 data('ozone')
 
 fit1 <- lm(ozone ~ poly(temperature, 1, raw=TRUE), data = ozone)
+ozone$p1 <- predict(fit1)
 fit2 <- lm(ozone ~ poly(temperature, 2, raw=TRUE), data = ozone)
+ozone$p2 = predict(fit2)
 fit3 <- lm(ozone ~ poly(temperature, 3, raw=TRUE), data = ozone)
+ozone$p3 = predict(fit3)
 fit4 <- lm(ozone ~ poly(temperature, 4, raw=TRUE), data = ozone)
+ozone$p4 = predict(fit4)
 fit5 <- lm(ozone ~ poly(temperature, 5, raw=TRUE), data = ozone)
+ozone$p5 = predict(fit5)
 fit6 <- lm(ozone ~ poly(temperature, 6, raw=TRUE), data = ozone)
+ozone$p6 = predict(fit6)
 
 ggplot(ozone, aes(x = temperature, y = ozone)) + theme_bw() +
-  geom_point()
+  geom_point() + 
+  geom_line(aes(y=p1), size = 0.5, color = 'blue') +
+  geom_line(aes(y=p2), size = 0.5, color = 'red') +
+  geom_line(aes(y=p3), size = 0.5, color = 'green') +
+  geom_line(aes(y=p4), size = 0.5, color = 'cyan') +
+  geom_line(aes(y=p5), size = 0.5, color = 'violet') +
+  geom_line(aes(y=p6), size = 0.5, color = 'black') +
+  ggtitle('Polynomial Regressions of Degrees 1 to 6')
+```
+Answer here.
+
+## Part 2
+```{r, echo=FALSE}
+# Create a table to store data
+loess_table <- matrix(ncol = 3)
+
+# create vector to store plots
+my_plots <- vector()
+
+# loop through span and degree
+for(d in 1:2){
+  for(s in seq(0.25, 0.75, 0.05)) {
+    fit <- myloess(ozone$temperature, ozone$ozone, s, d, show.plot = FALSE)
+    loess_table <- rbind(loess_table, c(fit[["span"]], fit[["degree"]], fit[["SSE"]]))
+    plots <- cbind(my_plots, fit$loessplot)
+  }
+}
+loess_table <- loess_table[-1,]
+loess_table <- as.table(loess_table)
+colnames(loess_table) <- c('span', 'degree', 'SSE')
+rownames(loess_table) <- c()
+knitr::kable(loess_table, 'pipe')
 ```
 
+## Part 3
+```{r}
+std_plots <- vector()
+for(d in 1:2){
+  for(s in seq(0.25, 0.75, 0.05)) {
+    fit <- loess(ozone$ozone ~ ozone$temperature, degree = d, span = s)
+  }
+}
+```
+
+# Problem 2
+## Part 1
+
+## Part 2
 
 
