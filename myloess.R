@@ -1,3 +1,5 @@
+## @knitr myloess
+
 # myloess computes the loess function of a predictor variable
 # x - the predictor variable
 # y - the explanatory set
@@ -49,12 +51,11 @@ myloess <- function(x, y, span = 0.5, degree = 1, show.plot = TRUE) {
 
     # perform weighted least squares on local data set
     fit <- lm(y ~ poly(x, degree, raw=TRUE),
-              weights=weights, data = local_pts)
+              weights = weights, data = local_pts)
 
     # use local polynomial to compute value of regression at point of estimation
     reg_val = predict(fit, newdata=data.frame(x=pts$x[i]))
     reg_vals <- cbind(reg_vals, reg_val)
-    SSE = sum(fitted(fit) - mean(pts$y))^2
     n_windows = n_windows + 1
   }
   
@@ -64,12 +65,10 @@ myloess <- function(x, y, span = 0.5, degree = 1, show.plot = TRUE) {
     ggtitle('LOESS Regression')
   
   if(show.plot) {
-    print("show.plot == TRUE")
-    p
+    print(p)
   }
   
-  print(reg_vals)
-  
+  SSE = sum((pts$y - reg_vals)^2)
   # list of objects to return
   res = list(span = span,
              degree = degree,
@@ -80,10 +79,3 @@ myloess <- function(x, y, span = 0.5, degree = 1, show.plot = TRUE) {
              loessplot = p)
   return(res)
 }
-
-# set wd and get the sample data
-setwd('~/School/Fall\ 2020/CMDA4654/Projects/CMDA-4654-Project1/')
-data <- read.csv('./example.csv')
-
-res <- myloess(data$x, data$y, span=0.33, degree = 1, show.plot=TRUE)
-res$loessplot
