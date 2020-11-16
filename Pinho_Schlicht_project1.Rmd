@@ -69,14 +69,11 @@ knitr::opts_chunk$set(echo = TRUE,
 setwd('~/School/Fall\ 2020/CMDA4654/Projects/CMDA-4654-Project1/')
 library(ggplot2)
 source('./myloess.R')
-source('./mykNN.r')
-```
-
-```{r, include=FALSE}
-read_chunk('myloess.R')
+source('./mykNN.R')
 ```
 
 # Problem 1
+### Part 1
 ```{r, include=FALSE}
 # load data
 load('data/ozone.RData')
@@ -88,7 +85,10 @@ fit3 <- lm(ozone ~ poly(temperature, 3, raw=TRUE), data = ozone)
 fit4 <- lm(ozone ~ poly(temperature, 4, raw=TRUE), data = ozone)
 fit5 <- lm(ozone ~ poly(temperature, 5, raw=TRUE), data = ozone)
 fit6 <- lm(ozone ~ poly(temperature, 6, raw=TRUE), data = ozone)
+
+ggplot(ozone, aes(x = temperature, y = ozone)) + theme_bw() +
+  geom_point()
 ```
-## Part 1
+
 
 
