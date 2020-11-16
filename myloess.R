@@ -1,3 +1,10 @@
+tukey_triweight <- function(u) {
+  if (abs(u) <= 1) {
+    return((1-abs(u)^3)^3)
+  }
+  return(0)
+}
+
 ## @knitr myloess
 
 # myloess computes the loess function of a predictor variable
@@ -12,63 +19,47 @@ myloess <- function(x, y, span = 0.5, degree = 1, show.plot = TRUE) {
   
   # size of local data neighborhoods used is span * n
   pts = data.frame(x = x, y = y)
-  n_local = ceiling(nrow(pts)*span)
-  n_total = nrow(pts)
+  pts = pts[order(x),] #orders dataframe by x
+  
+  n_local = ceiling(nrow(pts)*span) #number of points in a window
+  n_total = nrow(pts) # total number of points
   n_windows = 0
-  reg_vals = vector()
-  SSE = 0
+  fitted_vals = c()
   
   # loop through every point in the data
   for (i in 1:n_total) {
-
-    # get the distances from x[i] to every other x
-    dist_from_est <- matrix(NA, nrow = n_total, ncol = 2)
-    for(j in 1:n_total) {
-      dist_from_est[j,] <- c(abs(pts$x[i] - pts$x[j]), j)
-    }
+    current_pt = pts[i,1]
     
-    # sort dist matrix & only keep local pts
-    dist_from_est <- dist_from_est[order(dist_from_est[,1]),]
-    dist_from_est <- head(dist_from_est, n_local)
-    local_pts <- data.frame(x=pts$x[dist_from_est[,2]], y=pts$y[dist_from_est[,2]])
-    local_pts <- cbind(local_pts, dist=dist_from_est[,1])
+    # get n_local points with closest x coordinates
+    local_pts = pts
+    local_pts$dist = abs(pts$x-current_pt)
+    local_pts <- head(local_pts[order(local_pts$dist),], n_local)
     
-    # scale the distances
-    scale_factor <- 1/tail(local_pts$dist, n=1)
-    local_pts <- cbind(local_pts, scaled = local_pts$dist*scale_factor)
-    
-    # determine weights for points selected in previous part
-    weights = vector()
-    for(d in local_pts$scaled){
-      if(abs(d) < 1) {
-        wd = (1-abs(d)^3)^3
-      } else {
-        wd = 0
-      }
-      weights <- c(weights, wd)
-    }
-    local_pts <- cbind(local_pts, weights)
+    # determine Tukey tri-weights for each point
+    maxdist = max(local_pts$dist)
+    local_pts$weights <- sapply(local_pts$dist/maxdist,tukey_triweight)
 
     # perform weighted least squares on local data set
     fit <- lm(y ~ poly(x, degree, raw=TRUE),
               weights = weights, data = local_pts)
 
     # use local polynomial to compute value of regression at point of estimation
-    reg_val = predict(fit, newdata=data.frame(x=pts$x[i]))
-    reg_vals <- cbind(reg_vals, reg_val)
+    fitted_vals <- c(fitted_vals, 
+                     predict(fit, newdata = data.frame(x=current_pt)))
+    
     n_windows = n_windows + 1
   }
   
   # create a plot with the model
   p = ggplot(pts, aes(x, y)) + theme_bw() + 
-    geom_point() + geom_line(aes(x, y=reg_vals)) +
+    geom_point() + geom_line(aes(x, y=fitted_vals)) +
     ggtitle('LOESS Regression')
   
   if(show.plot) {
     print(p)
   }
   
-  SSE = sum((pts$y - reg_vals)^2)
+  SSE = sum((pts$y - fitted_vals)^2)
   # list of objects to return
   res = list(span = span,
              degree = degree,
