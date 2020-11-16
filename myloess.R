@@ -1,5 +1,4 @@
-
-# Explanation of function
+# myloess computes the loess function of a predictor variable
 # x - the predictor variable
 # y - the explanatory set
 # span - determines size of local data neighborhood
@@ -12,7 +11,8 @@ myloess <- function(x, y, span = 0.5, degree = 1, show.plot = TRUE) {
   # size of local data neighborhoods used is span * n
   pts = data.frame(x = x, y = y)
   n_local = ceiling(nrow(pts)*span)
-  n_total = nrows(pts)
+  n_total = nrow(pts)
+  n_windows = 0
   reg_vals = vector()
   SSE = 0
   
@@ -27,7 +27,7 @@ myloess <- function(x, y, span = 0.5, degree = 1, show.plot = TRUE) {
     
     # sort dist matrix & only keep local pts
     dist_from_est <- dist_from_est[order(dist_from_est[,1]),]
-    dist_from_est <- head(dist_from_est, local_size)
+    dist_from_est <- head(dist_from_est, n_local)
     local_pts <- data.frame(x=pts$x[dist_from_est[,2]], y=pts$y[dist_from_est[,2]])
     local_pts <- cbind(local_pts, dist=dist_from_est[,1])
     
@@ -55,39 +55,35 @@ myloess <- function(x, y, span = 0.5, degree = 1, show.plot = TRUE) {
     reg_val = predict(fit, newdata=data.frame(x=pts$x[i]))
     reg_vals <- cbind(reg_vals, reg_val)
     SSE = sum(fitted(fit) - mean(pts$y))^2
-
-    
-    print(summary(fit))
-    print(local_pts)
-    print(reg_val)
-    break
+    n_windows = n_windows + 1
   }
   
+  # create a plot with the model
+  p = ggplot(pts, aes(x, y)) + theme_bw() + 
+    geom_point() + geom_line(aes(x, y=reg_vals)) +
+    ggtitle('LOESS Regression')
+  
+  if(show.plot) {
+    print("show.plot == TRUE")
+    p
+  }
+  
+  print(reg_vals)
+  
+  # list of objects to return
   res = list(span = span,
              degree = degree,
              N_total = n_total,
              Win_total = n_windows,
              n_points = n_local,
              SSE = SSE,
-             loessplot = 0)
+             loessplot = p)
   return(res)
 }
-
-#Your function should return a named list containing the following:
-#  span: proportion of data used in each window (controls the bandwidth)
-#degree: degree of polynomial
-#N_total: total number of points in the data set
-#Win_total: total number of windows
-#n_points: number of points in each window in a vector
-#SSE: Error Sum of Squares (Tells us how good of a fit we had).
-#loessplot: An object containing the ggplot so that we can see the plot later.
-#We want this even if show.plot = FALSE
-#Note: you are NOT allowed to simply use stat_smooth() or geom_smooth() to have it automatically do LOESS.
-#You should use geom_line() or similar to plot your final the LOESS curve.
-# Make sure you can access the objects properly using the $ notation.
 
 # set wd and get the sample data
 setwd('~/School/Fall\ 2020/CMDA4654/Projects/CMDA-4654-Project1/')
 data <- read.csv('./example.csv')
 
 res <- myloess(data$x, data$y, span=0.33, degree = 1, show.plot=TRUE)
+res$loessplot
