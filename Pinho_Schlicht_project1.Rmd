@@ -33,47 +33,18 @@ urlcolor: blue
 ---
 
 ```{r setup, include=FALSE}
-# This is the setup chunk
-#  Here you can set global options for the entire document
+library(knitr)
+library(ggplot2)
+library(kableExtra)
+knitr::opts_chunk$set(echo = TRUE)
 
-library(knitr) # I recommend doing this here
-
-# Although you can call functions from a library using the following notation
-#  without loading the entire library.
-knitr::opts_chunk$set(echo = TRUE, 
-                      comment = NA, # Required
-                      fig.path = "./figures/",  # Store all figures here in relative path (make the folder first)
-                      fig.align = "center",
-                      fig.width = 7,
-                      fig.height = 7,
-                      message = FALSE, # Turn off load messages
-                      warning = FALSE # Turn off warnings
-                      )
-
+source('./Pinho_Schlicht_project1.R')
 ```
 
 \clearpage
 
-```{r include=FALSE}
-# You should not echo this chunk.
-# include=FALSE does more than echo=FALSE, it actually does: echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'
-
-# You should set your working directory at the very beginning of your R Markdown file
-# setwd("~/Dropbox/teaching/FA2020/CMDA_4654/homework/homework1/")
-
-# In linux ~/ is shorthand for /home/username/
-# You should type things out properly for your system
-# Mac: /Users/username/Documents/CMDA4654/Lectures/Lecture_03/.../
-# Windows: C:/Users/username/Documents/etc/Lecture/Lecture_03/.../
-
-setwd('~/School/Fall\ 2020/CMDA4654/Projects/CMDA-4654-Project1/')
-library(ggplot2)
-source('./myloess.R')
-source('./mykNN.R')
-```
-
-# Problem 1
-## Part 1
+## Problem 1
+### Part 1
 ```{r}
 # load data
 load('data/ozone.RData')
@@ -92,7 +63,7 @@ ozone$p5 = predict(fit5)
 fit6 <- lm(ozone ~ poly(temperature, 6, raw=TRUE), data = ozone)
 ozone$p6 = predict(fit6)
 
-ggplot(ozone, aes(x = temperature, y = ozone)) + theme_bw() +
+polyplot <- ggplot(ozone, aes(x = temperature, y = ozone)) + theme_bw() +
   geom_point() + 
   geom_line(aes(y=p1), size = 0.5, color = 'blue') +
   geom_line(aes(y=p2), size = 0.5, color = 'red') +
@@ -101,10 +72,15 @@ ggplot(ozone, aes(x = temperature, y = ozone)) + theme_bw() +
   geom_line(aes(y=p5), size = 0.5, color = 'violet') +
   geom_line(aes(y=p6), size = 0.5, color = 'black') +
   ggtitle('Polynomial Regressions of Degrees 1 to 6')
+
+polyplot.margin=margin(0.5,1,0.5,1,"cm")
+
+polyplot
 ```
+
 Answer here.
 
-## Part 2
+### Part 2
 ```{r, echo=FALSE}
 # Create a table to store data
 loess_table <- matrix(ncol = 3)
@@ -127,7 +103,7 @@ rownames(loess_table) <- c()
 knitr::kable(loess_table, 'pipe')
 ```
 
-## Part 3
+### Part 3
 ```{r}
 std_plots <- vector()
 for(d in 1:2){
@@ -137,9 +113,38 @@ for(d in 1:2){
 }
 ```
 
-# Problem 2
-## Part 1
+## Problem 2
+```{r eval=FALSE, echo=TRUE}
+# Split 70/30 randomly
+library(ISLR)
 
-## Part 2
+Auto_new <- Auto[, -9]
+newOrigin <- c("USA", "European", "Japanese")
+Auto_new$origin <- factor(newOrigin[Auto_new$origin], newOrigin)
 
+set.seed(567); split = sample(1:nrow(Auto_new), 0.7*nrow(Auto_new))
+train = Auto_new[split,1:ncol(Auto_new)-1]
+test = Auto_new[-split,1:ncol(Auto_new)-1]
+cl_train = Auto_new[split,ncol(Auto_new)]
+cl_test = Auto_new[-split,ncol(Auto_new)]
+
+acc = integer(0)
+for (K in 1:20) {
+  out <- mykNN(train, test, cl_train, cl_test, k=K)
+  acc[K] = out$accuracy
+}
+```
+```{r echo=FALSE}
+acc = c(0.7711864,0.7711864,0.720339,0.7711864,0.7627119,0.7627119,0.7457627,0.7542373,0.7372881,0.7457627,0.7372881, 0.7372881,0.7457627,0.7627119,0.7542373,0.7457627,0.7372881,0.7542373,0.7372881,0.7203390)
+```
+```{r include=TRUE}
+accdf = data.frame("k" = 1:20, "Accuracy" = acc)
+
+knitr::kable(accdf)
+
+library(ggplot2)
+ggplot(accdf, aes(x=k,y=Accuracy)) + geom_point()
+```
+
+It seems that for this dataset using $k=1$ or $k=2$ seems to give the best accuracy and for the least amount of neighbors.
 
